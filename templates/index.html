@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Vagas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-900 h-screen">
+
+<!-- Container principal, ocupa toda a altura da tela -->
+<div class="flex h-full">
+
+  <!-- Logo à esquerda (colocada como aside) -->
+<div class="w-1/5 bg-gradient-to-r from-gray-800 via-indigo-900 to-purple-800 text-white p-6 flex justify-center items-center">
+  <img src="/static/img/download.png" alt="Logo" class="h-200"> <!-- Ajuste a altura da logo -->
+</div>
+
+  <!-- Área principal do dashboard (cards e gráficos) -->
+  <div class="flex-1 p-6 overflow-auto">
+    <!-- Cards principais (primeira linha) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div class="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white shadow-lg rounded-lg p-8 text-center">
+        <p class="text-sm font-semibold">Vagas Criadas</p>
+        <p id="vagas_criadas" class="text-4xl font-bold">0</p>
+      </div>
+      <div class="bg-gradient-to-r from-red-500 via-yellow-500 to-orange-600 text-white shadow-lg rounded-lg p-8 text-center">
+        <p class="text-sm font-semibold">Vagas Fechadas</p>
+        <p id="vagas_fechadas" class="text-4xl font-bold">0</p>
+      </div>
+      <div class="bg-gradient-to-r from-green-400 via-teal-500 to-blue-600 text-white shadow-lg rounded-lg p-8 text-center">
+        <p class="text-sm font-semibold">Vagas em Aberto</p>
+        <p id="vagas_abertas" class="text-4xl font-bold">0</p>
+      </div>
+    </div>
+
+    <!-- Cards adicionais (segunda linha) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div class="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white shadow-lg rounded-lg p-8 text-center">
+        <p class="text-sm font-semibold">Eficácia (%)</p>
+        <p id="eficacia" class="text-4xl font-bold">0</p>
+      </div>
+      <div class="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-lg rounded-lg p-8 text-center">
+        <p class="text-sm font-semibold">Backlog (%)</p>
+        <p id="backlog" class="text-4xl font-bold">0</p>
+      </div>
+      <div class="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 text-white shadow-lg rounded-lg p-8 text-center">
+        <p class="text-sm font-semibold">Tempo Médio</p>
+        <p id="tempo_medio" class="text-4xl font-bold">0</p>
+      </div>
+    </div>
+
+    <!-- Gráficos organizados horizontalmente -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- Gráfico: Vagas Criadas x Fechadas por Empresa -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="font-semibold text-lg mb-4 text-gray-800">Vagas Criadas x Fechadas por Empresa</h2>
+        <canvas id="empresaChart"></canvas>
+      </div>
+
+      <!-- Gráfico: Vagas Criadas x Fechadas por Setor -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="font-semibold text-lg mb-4 text-gray-800">Vagas Criadas x Fechadas por Setor</h2>
+        <canvas id="setorChart"></canvas>
+      </div>
+
+      <!-- Gráfico: Vagas Criadas x Fechadas ao Longo do Tempo -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="font-semibold text-lg mb-4 text-gray-800">Vagas Criadas x Fechadas ao Longo do Tempo</h2>
+        <canvas id="tempoChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Gráficos adicionais -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- Gráfico: Vagas Criadas x Fechadas por Recrutador -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="font-semibold text-lg mb-4 text-gray-800">Vagas Criadas x Fechadas por Recrutador</h2>
+        <canvas id="recrutadorChart"></canvas>
+      </div>
+
+      <!-- Novo Gráfico: Vagas Criadas x Fechadas por Ano -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="font-semibold text-lg mb-4 text-gray-800">Vagas Criadas x Fechadas por Ano</h2>
+        <canvas id="anoChart"></canvas>
+      </div>
+
+      <!-- Gráfico Radar de Comparação Geral -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="font-semibold text-lg mb-4 text-gray-800">Comparativo Geral (Radar)</h2>
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Fetch data from the API and update the cards
+  fetch("/api/dashboard")
+    .then(response => response.json())
+    .then(data => {
+      // Update cards with data
+      document.getElementById("vagas_criadas").textContent = data.vagas_criadas;
+      document.getElementById("vagas_fechadas").textContent = data.vagas_fechadas;
+      document.getElementById("vagas_abertas").textContent = data.vagas_abertas;
+      document.getElementById("eficacia").textContent = data.eficacia + "%";
+      document.getElementById("backlog").textContent = data.backlog + "%";
+      document.getElementById("tempo_medio").textContent = data.tempo_medio + " dias";
+
+      // Fill the charts
+      preencherGrafico(data);
+    })
+    .catch(error => {
+      console.error('Erro ao carregar os dados da API:', error);
+    });
+
+  // Function to fill the charts with data
+  function preencherGrafico(data) {
+    // Gráfico de Vagas Criadas x Fechadas por Empresa
+    var ctx1 = document.getElementById('empresaChart').getContext('2d');
+    new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: data.empresas,
+        datasets: [{
+          label: 'Vagas Criadas',
+          data: data.vagas_criadas_empresa,
+          backgroundColor: 'rgba(99, 132, 255, 0.6)',
+        }, {
+          label: 'Vagas Fechadas',
+          data: data.vagas_fechadas_empresa,
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+        }]
+      },
+      options: {
+        scales: {
+          x: { stacked: true },
+          y: { stacked: true }
+        }
+      }
+    });
+
+    // Gráfico de Vagas Criadas x Fechadas por Setor
+    var ctx2 = document.getElementById('setorChart').getContext('2d');
+    new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: data.setores,
+        datasets: [{
+          label: 'Vagas Criadas',
+          data: data.vagas_criadas_setor,
+          backgroundColor: 'rgba(99, 132, 255, 0.6)',
+        }, {
+          label: 'Vagas Fechadas',
+          data: data.vagas_fechadas_setor,
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+      }
+    });
+
+    // Novo Gráfico: Vagas Criadas x Fechadas por Ano
+    var ctx6 = document.getElementById('anoChart').getContext('2d');
+    new Chart(ctx6, {
+      type: 'line',
+      data: {
+        labels: data.meses,  // Use meses como rótulos para este gráfico
+        datasets: [{
+          label: 'Vagas Criadas',
+          data: data.vagas_criadas_tempo,
+          borderColor: 'rgba(99, 132, 255, 1)',
+          fill: false,
+          borderWidth: 2
+        }, {
+          label: 'Vagas Fechadas',
+          data: data.vagas_fechadas_tempo,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          fill: false,
+          borderWidth: 2
+        }]
+      }
+    });
+
+    // Gráfico de Vagas Criadas x Fechadas ao Longo do Tempo
+    var ctx3 = document.getElementById('tempoChart').getContext('2d');
+    new Chart(ctx3, {
+      type: 'line',
+      data: {
+        labels: data.meses,
+        datasets: [{
+          label: 'Vagas Criadas',
+          data: data.vagas_criadas_tempo,
+          borderColor: 'rgba(99, 132, 255, 1)',
+          fill: true,
+          backgroundColor: 'rgba(99, 132, 255, 0.2)',
+        }, {
+          label: 'Vagas Fechadas',
+          data: data.vagas_fechadas_tempo,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          fill: true,
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        }]
+      }
+    });
+
+    // Gráfico de Vagas Criadas x Fechadas por Recrutador
+    var ctx4 = document.getElementById('recrutadorChart').getContext('2d');
+    new Chart(ctx4, {
+      type: 'bar',
+      data: {
+        labels: data.recrutadores,
+        datasets: [{
+          label: 'Vagas Criadas',
+          data: data.vagas_criadas_recrutador,
+          backgroundColor: 'rgba(99, 132, 255, 0.6)',
+        }, {
+          label: 'Vagas Fechadas',
+          data: data.vagas_fechadas_recrutador,
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+        }]
+      }
+    });
+
+    // Gráfico Radar de Comparação Geral
+    var ctx5 = document.getElementById('radarChart').getContext('2d');
+    new Chart(ctx5, {
+      type: 'radar',
+      data: {
+        labels: data.recrutadores,
+        datasets: [{
+          label: 'Vagas Criadas',
+          data: data.vagas_criadas_recrutador,
+          backgroundColor: 'rgba(99, 132, 255, 0.2)',
+          borderColor: 'rgba(99, 132, 255, 1)',
+          borderWidth: 1
+        }, {
+          label: 'Vagas Fechadas',
+          data: data.vagas_fechadas_recrutador,
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1
+        }]
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
